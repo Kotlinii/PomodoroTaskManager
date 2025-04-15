@@ -2,6 +2,8 @@ package com.pomodorotaskmanager.ui.views
 
 import android.content.res.Configuration
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -37,22 +40,23 @@ import com.pomodorotaskmanager.ui.theme.PomodoroTaskManagerTheme
 fun TaskInfo(
     title: String,
     description: String,
+    progress: Int,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onRun: () -> Unit
+    onReset: () -> Unit,
+    onPlay: () -> Unit
 ) {
-    val textColor = MaterialTheme.colorScheme.onSurface
-    val iconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    val colorScheme = MaterialTheme.colorScheme
+    val textColor = colorScheme.onSurface
+    val iconColor = colorScheme.onSurface.copy(alpha = 0.7f)
+    val buttonBackground = colorScheme.background
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {
-        // Task Title and Description
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 color = textColor,
@@ -67,7 +71,6 @@ fun TaskInfo(
             )
         }
 
-        // Task Actions
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
@@ -75,19 +78,99 @@ fun TaskInfo(
                 .align(Alignment.Top)
         ) {
             IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = iconColor)
+                Icon(Icons.Default.Edit, "Edit", tint = iconColor)
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = iconColor)
+                Icon(Icons.Default.Delete, "Delete", tint = iconColor)
             }
-            IconButton(onClick = onRun) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Run", tint = iconColor)
+
+            if (progress >= 4) {
+                // Reset button with emphasis
+                IconButton(
+                    onClick = onReset,
+                    modifier = Modifier
+                        .background(buttonBackground, shape = RoundedCornerShape(6.dp))
+                        .border(1.dp, iconColor, RoundedCornerShape(6.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset",
+                        tint = iconColor
+                    )
+                }
+            } else {
+                // Play button with emphasis
+                IconButton(
+                    onClick = onPlay,
+                    modifier = Modifier
+                        .background(buttonBackground, shape = RoundedCornerShape(6.dp))
+                        .border(1.dp, iconColor, RoundedCornerShape(6.dp))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Start",
+                        tint = iconColor,
+
+                    )
+                }
             }
         }
     }
 }
 
+@Composable
+fun TaskItem(
+    title: String,
+    description: String,
+    progress: Int,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onReset: () -> Unit,
+    onPlay: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            TaskInfo(
+                title = title,
+                description = description,
+                onEdit = onEdit,
+                onDelete = onDelete,
+                onReset = onReset,
+                onPlay = onPlay,
+                progress = progress
+            )
 
+            // Pomodoro progress bar (unchanged)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                repeat(4) { index ->
+                    PomodoroBar(
+                        isFilled = index < progress,
+                        isLastCompleted = index == 3 && progress >= 4,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun PomodoroBar(
@@ -113,7 +196,7 @@ fun PomodoroBar(
 
         // Hatching only for incomplete bars
         if (!isFilled) {
-            val stripeWidth = 4.dp.toPx()
+             val stripeWidth = 4.dp.toPx()
             val spacing = 6.dp.toPx()
 
             val height = size.height
@@ -135,55 +218,6 @@ fun PomodoroBar(
 }
 
 
-@Composable
-fun TaskItem(
-    title: String,
-    description: String,
-    progress: Int,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onRun: () -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .padding(8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            TaskInfo(
-                title = title,
-                description = description,
-                onEdit = onEdit,
-                onDelete = onDelete,
-                onRun = onRun
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                repeat(4) { index ->
-                    PomodoroBar(
-                        isFilled = index < progress,
-                        isLastCompleted = index == 3 && progress >= 4,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Preview(name = "Light Mode", uiMode = Configuration.UI_MODE_NIGHT_NO, showBackground = true)
 @Composable
@@ -192,10 +226,26 @@ fun PreviewLightMode() {
         TaskItem(
             title = "Test the application UI",
             description = "Check if the UI looks good!",
-            progress = (0..4).random(),
+            progress = (0..3).random(),
             onEdit = { /* Handle Edit */ },
             onDelete = { /* Handle Delete */ },
-            onRun = { /* Handle Run */ }
+            onReset = { /* Handle Reset */},
+            onPlay = { /* Handle Run */ }
+        )
+    }
+}
+@Preview(name = "Light Mode Full Bars", uiMode = Configuration.UI_MODE_NIGHT_NO, showBackground = true)
+@Composable
+fun PreviewLightModeFullBars() {
+    PomodoroTaskManagerTheme {
+        TaskItem(
+            title = "Test the application UI",
+            description = "Check if the UI looks good!",
+            progress = 4,
+            onEdit = { /* Handle Edit */ },
+            onDelete = { /* Handle Delete */ },
+            onReset = { /* Handle Reset */},
+            onPlay = { /* Handle Run */ }
         )
     }
 }
@@ -210,7 +260,24 @@ fun PreviewDarkMode() {
             progress = (0..4).random(),
             onEdit = { /* Handle Edit */ },
             onDelete = { /* Handle Delete */ },
-            onRun = { /* Handle Run */ }
+            onReset = { /* Handle Reset */},
+            onPlay = { /* Handle Run */ }
+        )
+    }
+}
+
+@Preview(name = "Dark Mode Full Bars", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+fun PreviewDarkModeFullBars() {
+    PomodoroTaskManagerTheme {
+        TaskItem(
+            title = "Test the application UI",
+            description = "It does! 😀",
+            progress = 4,
+            onEdit = { /* Handle Edit */ },
+            onDelete = { /* Handle Delete */ },
+            onReset = { /* Handle Reset */},
+            onPlay = { /* Handle Run */ }
         )
     }
 }
